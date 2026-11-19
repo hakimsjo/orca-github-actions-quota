@@ -1,0 +1,38 @@
+{
+  "manifestVersion": 2,
+  "id": "github-actions-quota",
+  "name": "GitHub Actions",
+  "version": "0.1.0",
+  "description": "Visar hur mycket GitHub Actions-tid och lagring du har kvar via Orcas GitHub-session.",
+  "engines": {
+    "orca": ">=1.4.248"
+  },
+  "execution": "trusted-worker",
+  "pluginApi": 1,
+  "main": "src/worker.ts",
+  "contributes": {
+    "panels": [
+      {
+        "id": "github-actions-quota",
+        "title": "GitHub Actions",
+        "icon": "zap",
+        "entry": "src/panel.tsx",
+        "ui": "components"
+      }
+    ],
+    "statusBarItems": [
+      {
+        "id": "quota",
+        "text": "Actions: —",
+        "icon": "zap",
+        "tone": "neutral",
+        "tooltip": "GitHub Actions återstående tid"
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "kind": "storage:own"
+    }
+  ]
+}
