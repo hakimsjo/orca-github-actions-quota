@@ -46,3 +46,26 @@ test('renders remaining minutes and organization info from worker', async () => 
   assert.deepEqual(view.refusals, [])
   await view.unmount()
 })
+
+test('triggers quota.openLogin when clicking Logga in på GitHub', async () => {
+  let loginCalled = 0
+  const unauthSnapshot = parseQuotaSnapshot({ authenticated: false, contextId: 'personal' })
+  const host = mockHost({
+    requests: {
+      'quota.get': () => ({ snapshot: unauthSnapshot, refreshing: false, selectedContextId: 'personal' }),
+      'quota.openLogin': () => {
+        loginCalled += 1
+        return { opened: true }
+      }
+    }
+  })
+
+  const view = await mount(panel, { host })
+  const loginButton = view.find({ type: 'Button', text: 'Logga in på GitHub' })
+  assert.ok(loginButton)
+  await view.press(loginButton)
+  assert.equal(loginCalled, 1)
+  assert.deepEqual(view.errors, [])
+  assert.deepEqual(view.refusals, [])
+  await view.unmount()
+})

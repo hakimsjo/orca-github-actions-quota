@@ -77,3 +77,20 @@ test('worker returns fresh cached snapshot and switches context on quota.selectC
   assert.deepEqual(worker.refusals, [])
   await worker.deactivate()
 })
+
+test('pickPreferredWorktreeSelector prefers active worktree over inactive first entry', () => {
+  assert.equal(
+    main.pickPreferredWorktreeSelector([
+      { worktreeId: 'repo::/Users/me', isActive: false },
+      { worktreeId: 'repo::/Users/me::workspace:123', isActive: true }
+    ]),
+    'id:repo::/Users/me::workspace:123'
+  )
+  assert.equal(
+    main.pickPreferredWorktreeSelector([
+      { worktreeId: 'repo::/Users/me', isActive: false, identity: { key: 'k1' } }
+    ]),
+    'identity:k1'
+  )
+  assert.equal(main.pickPreferredWorktreeSelector([]), 'active')
+})

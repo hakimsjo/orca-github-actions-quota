@@ -33,6 +33,7 @@ import type { ActionsQuotaSnapshot } from './protocol'
 const snapshotAtom = atom<ActionsQuotaSnapshot | null>(null)
 const selectedContextAtom = atom<string>('personal')
 const refreshingAtom = atom<boolean>(false)
+const loginErrorAtom = atom<string | null>(null)
 const activeTabAtom = atom<'overview' | 'history'>('overview', 'overview', { persist: 'plugin' })
 
 function formatNumber(n: number): string {
@@ -72,7 +73,15 @@ async function handleSelectContext(contextId: string): Promise<void> {
 }
 
 async function handleOpenLogin(): Promise<void> {
-  await plugin.request('quota.openLogin')
+  set(loginErrorAtom, null)
+  try {
+    const res = await plugin.request('quota.openLogin')
+    if (!res.opened) {
+      set(loginErrorAtom, 'Kunde inte öppna GitHub-inloggningen i Orcas webbläsare.')
+    }
+  } catch (err) {
+    set(loginErrorAtom, err instanceof Error ? err.message : 'Kunde inte öppna GitHub-inloggningen.')
+  }
 }
 
 async function handleOpenBilling(): Promise<void> {
@@ -324,6 +333,7 @@ export default function Panel() {
   const snapshot = read(snapshotAtom)
   const selectedContextId = read(selectedContextAtom)
   const refreshing = read(refreshingAtom)
+  const loginError = read(loginErrorAtom)
   const activeTab = read(activeTabAtom)
 
   return (
@@ -337,12 +347,21 @@ export default function Panel() {
             <Text size="xs">{snapshot.error}</Text>
             {!snapshot.authenticated ? (
               <Row gap="xs">
+                <Button size="sm" icon="link" onPress={handleOpenLogin}>
+                  Logga in på GitHub
+                </Button>
                 <Button size="sm" variant="ghost" icon="refresh" onPress={handleRefresh} disabled={refreshing}>
                   Försök igen
                 </Button>
               </Row>
             ) : null}
           </Stack>
+        </Callout>
+      ) : null}
+
+      {loginError ? (
+        <Callout tone="danger" icon="warning" title="Kunde inte öppna inloggning">
+          <Text size="xs">{loginError}</Text>
         </Callout>
       ) : null}
 

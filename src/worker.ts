@@ -177,14 +177,20 @@ function buildBrowserEvalScript(contextId: string, month: number, year: number):
   })()`
 }
 
+export function pickPreferredWorktreeSelector(
+  worktrees?: { worktreeId?: string; isActive?: boolean; identity?: { key?: string } }[]
+): string {
+  const preferred = worktrees?.find((w) => w.isActive) ?? worktrees?.[0]
+  if (preferred?.identity?.key) return `identity:${preferred.identity.key}`
+  if (preferred?.worktreeId) return `id:${preferred.worktreeId}`
+  return 'active'
+}
+
 async function resolveWorkspaceSelector(): Promise<string> {
   const ps = (await runOrcaCli(['worktree', 'ps'])) as {
-    worktrees?: { worktreeId?: string; identity?: { key?: string } }[]
+    worktrees?: { worktreeId?: string; isActive?: boolean; identity?: { key?: string } }[]
   }
-  const first = ps?.worktrees?.[0]
-  if (first?.identity?.key) return `identity:${first.identity.key}`
-  if (first?.worktreeId) return `id:${first.worktreeId}`
-  return 'active'
+  return pickPreferredWorktreeSelector(ps?.worktrees)
 }
 
 async function fetchRawFromOrcaBrowser(orca: OrcaWorkerApi, contextId: string): Promise<RawBillingPayload> {
@@ -397,7 +403,9 @@ export default function activate(orca: OrcaWorkerApi): void {
     }
 
     if (pageId) {
-      await runOrcaCli(['tab', 'switch', '--worktree', selector, '--page', pageId]).catch(() => {})
+      await runOrcaCli(['tab', 'switch', '--worktree', selector, '--page', pageId, '--focus']).catch((err) => {
+        orca.log(`Failed to focus GitHub login tab ${pageId}: ${String(err)}`)
+      })
     }
     return { opened: Boolean(pageId) }
   })
